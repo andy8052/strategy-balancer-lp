@@ -7,8 +7,8 @@ def vault(Vault, gov, rewards, guardian, token, bptWhale):
         token,
         gov,
         rewards,
-        "Balancer Pool Vault",
-        "yvBLP BAL/WETH 80/20",
+        "Balancer BAL-WETH 80-20 Pool yVault",
+        "yvBal-BAL-WETH-80-20",
         {"from": guardian},
     )
     vault.setManagementFee(0, {"from": gov})
@@ -28,7 +28,7 @@ def strategy(StrategyBalancerLP, vault, strategist, token, keeper, gov):
         strategy,
         token.totalSupply() / 2,  # Debt limit of 50% total supply
         token.totalSupply() // 1000,  # Rate limt of 0.1% of token supply per block
-        50,  # 0.5% performance fee for Strategist
+        50,  # 0% performance fee for Strategist
         {"from": gov},
     )
     return strategy

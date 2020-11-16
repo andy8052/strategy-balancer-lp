@@ -1,6 +1,6 @@
 import json
 
-from brownie import StrategySushiswapPair, Vault, accounts, rpc, web3, Wei
+from brownie import StrategyBalancerLP, Vault, accounts, rpc, web3, Wei
 from click import secho
 from eth_utils import is_checksum_address
 
@@ -17,48 +17,41 @@ def get_address(label):
 
 
 def main():
-    # configurations = json.load(open("configurations.json"))
-    # for i, config in enumerate(configurations["vaults"]):
-    #     print(f"[{i}] {config['name']}")
-    # config = configurations["vaults"][int(input("choose configuration to deploy: "))]
     deployer = accounts.load(input("deployer account: "))
 
-    # if input("deploy vault? y/n: ") == "y":
-    #     gov = get_address("gov")
-    #     rewards = get_address("rewards")
-    #     vault = Vault.deploy(
-    #         config["want"],
-    #         gov,
-    #         rewards,
-    #         config["name"],
-    #         config["symbol"],
-    #         {"from": deployer, 'gas_price':Wei("15 gwei")},
-    #     )
-    # else:
-    #     vault = Vault.at(get_address("vault"))
+    if input("deploy vault? y/n: ") == "y":
+        gov = get_address("gov")
+        rewards = get_address("rewards")
+        vault = Vault.deploy(
+            "0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4",
+            gov,
+            rewards,
+            "Balancer BAL-WETH 80-20 Pool yVault",
+            "yvBal-BAL-WETH-80-20",
+            {"from": deployer},
+        )
+    else:
+        vault = Vault.at(get_address("vault"))
 
-    strategy = StrategySushiswapPair.at(get_address("strat"))
-    strategy.harvest({"from": deployer, 'gas_price':Wei("20 gwei")})
+    strategy = StrategyBalancerLP.deploy(vault, {"from": deployer})
 
-    # strategy = StrategySushiswapPair.deploy(vault, config["pid"], {"from": deployer, 'gas_price':Wei("15 gwei")})
+    deposit_limit = Wei('50 ether')
+    vault.setDepositLimit(deposit_limit, {"from": deployer})
+    vault.addStrategy(strategy, deposit_limit, deposit_limit, 0, {"from": deployer})
 
-    # deposit_limit = Wei('200 ether')
-    # vault.setDepositLimit(deposit_limit, {"from": deployer, 'gas_price':Wei("15 gwei")})
-    # vault.addStrategy(strategy, deposit_limit, deposit_limit, 50, {"from": deployer, 'gas_price':Wei("15 gwei")})
-
-    # secho(
-    #     f"deployed {config['symbol']}\nvault: {vault}\nstrategy: {strategy}\n",
-    #     fg="green",
-    # )
+    secho(
+        f"deployed {config['symbol']}\nvault: {vault}\nstrategy: {strategy}\n",
+        fg="green",
+    )
 
 
 def migrate():
     assert rpc.is_active()
     vault = Vault.at(get_address("vault"))
     gov = accounts.at(vault.governance(), force=True)
-    old_strategy = StrategySushiswapPair.at(get_address("old strategy"))
-    new_strategy = StrategySushiswapPair.deploy(
-        vault, old_strategy.pid(), {"from": gov}
+    old_strategy = StrategyBalancerLP.at(get_address("old strategy"))
+    new_strategy = StrategyBalancerLP.deploy(
+        vault, {"from": gov}
     )
     print("pricePerShare", vault.pricePerShare().to("ether"))
     print("estimatedTotalAssets", old_strategy.estimatedTotalAssets().to("ether"))

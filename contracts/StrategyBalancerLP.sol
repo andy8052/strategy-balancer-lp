@@ -84,7 +84,7 @@ contract StrategyBalancerLP is BaseStrategy {
      * be 0, and you should handle that scenario accordingly.
      */
     function adjustPosition(uint256 _debtOutstanding) internal override {
-        // pls do not take our tokens
+        // We just updated our reserve here
         setReserve(want.balanceOf(address(this)).sub(_debtOutstanding));
     }
 
@@ -96,6 +96,7 @@ contract StrategyBalancerLP is BaseStrategy {
      * instead of `prepareReturn()`
      */
     function exitPosition() internal override {
+        // Now all tokens are fair game
         setReserve(0);
     }
 
@@ -104,7 +105,8 @@ contract StrategyBalancerLP is BaseStrategy {
      * up to `_amount`. Any excess should be re-invested here as well.
      */
     function liquidatePosition(uint256 _amount) internal override returns (uint256 _amountFreed) {
-        return want.balanceOf(address(this));
+        setReserve(want.balanceOf(address(this)).sub(_amount));
+        return want.balanceOf(address(this)).sub(getReserve());
     }
 
     function setGasFactor(uint256 _gasFactor) public {
@@ -123,6 +125,7 @@ contract StrategyBalancerLP is BaseStrategy {
      */
     function prepareMigration(address _newStrategy) internal override {
         want.transfer(_newStrategy, want.balanceOf(address(this)));
+        // Just incase we have BAL dust
         IERC20(bal).transfer(_newStrategy, IERC20(bal).balanceOf(address(this)));
     }
 

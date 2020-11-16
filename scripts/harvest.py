@@ -1,6 +1,6 @@
 import json
 
-from brownie import StrategySushiswapPair, Vault, accounts, rpc, web3, Wei
+from brownie import StrategyBalancerLP, Vault, accounts, rpc, web3, Wei
 from click import secho
 from eth_utils import is_checksum_address
 
@@ -19,13 +19,13 @@ def get_address(label):
 def main():
     deployer = accounts.load(input("deployer account: "))
 
-    strategy = StrategySushiswapPair.at(get_address("strat"))
+    strategy = StrategyBalancerLP.at(get_address("strat"))
 
     balance = strategy.estimatedTotalAssets().to("ether")
 
     strategy.harvest({"from": deployer})
 
     secho(
-        f"Total Assets: {balance} SLP\nstrategy: {strategy}\n",
+        f"Total Assets: {balance} BLP\nstrategy: {strategy}\n",
         fg="green",
     )
